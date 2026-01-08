@@ -1,0 +1,372 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============ AUTH MODELS ============
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  password      String?
+  phone         String?
+
+  // Referral system
+  referralCode  String    @unique @default(cuid())
+  referredBy    String?
+  referredByUser User?    @relation("Referrals", fields: [referredBy], references: [id])
+  referrals     User[]   @relation("Referrals")
+
+  // Credits from referrals
+  credits       Int       @default(0) // in cents
+
+  // Team/Family management
+  teamId        String?
+  team          Team?     @relation(fields: [teamId], references: [id])
+  ownedTeams    Team[]    @relation("TeamOwner")
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  orders        Order[]
+  esims         ESim[]
+  usageAlerts   UsageAlert[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============ TEAM/FAMILY MODELS ============
+
+model Team {
+  id          String   @id @default(cuid())
+  name        String
+  ownerId     String
+  owner       User     @relation("TeamOwner", fields: [ownerId], references: [id])
+  members     User[]
+  invitations TeamInvitation[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TeamInvitation {
+  id        String   @id @default(cuid())
+  email     String
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  status    InvitationStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+}
+
+// ============ ESIM & ORDER MODELS ============
+
+model Order {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+
+  // eSIM Access API fields
+  orderNo       String?     @unique // From eSIM Access API
+  transactionId String      @unique // Our unique ID for the order
+
+  // Payment
+  amount        Int         // Total in cents
+  currency      String      @default("USD")
+  stripePaymentId String?
+
+  status        OrderStatus @default(PENDING)
+
+  // Items
+  items         OrderItem[]
+  esims         ESim[]
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model OrderItem {
+  id          String  @id @default(cuid())
+  orderId     String
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  packageCode String
+  slug        String?
+  name        String
+  price       Int     // in cents
+  quantity    Int     @default(1)
+  periodNum   Int?    // For day pass plans
+
+  // Package details snapshot
+  volume      BigInt  // bytes
+  duration    Int
+  durationUnit String @default("DAY")
+  location    String  // Country codes
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  COMPLETED
+  CANCELLED
+  FAILED
+}
+
+model ESim {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  orderId       String
+  order         Order     @relation(fields: [orderId], references: [id])
+
+  // eSIM Access API fields
+  esimTranNo    String    @unique
+  iccid         String
+  imsi          String?
+  msisdn        String?
+
+  // Activation
+  activationCode String   // LPA:1$...
+  qrCodeUrl     String
+  shortUrl      String?
+
+  // Status
+  smdpStatus    SmdpStatus @default(RELEASED)
+  esimStatus    EsimStatus @default(GOT_RESOURCE)
+
+  // Plan details
+  packageCode   String
+  packageName   String
+  location      String
+  totalVolume   BigInt    // bytes
+  usedVolume    BigInt    @default(0) // bytes
+  totalDuration Int
+  durationUnit  String    @default("DAY")
+
+  // Dates
+  activatedAt   DateTime?
+  expiresAt     DateTime?
+
+  // Additional info
+  pin           String?
+  puk           String?
+  apn           String?
+  smsStatus     Int       @default(0)
+  dataType      Int       @default(1)
+
+  // Usage alerts
+  usageAlerts   UsageAlert[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum SmdpStatus {
+  RELEASED
+  DOWNLOAD
+  INSTALLATION
+  ENABLED
+  DISABLED
+  DELETED
+}
+
+enum EsimStatus {
+  CREATE
+  PAYING
+  PAID
+  GETTING_RESOURCE
+  GOT_RESOURCE
+  IN_USE
+  USED_UP
+  UNUSED_EXPIRED
+  USED_EXPIRED
+  CANCEL
+  SUSPENDED
+  REVOKE
+}
+
+// ============ USAGE ALERTS ============
+
+model UsageAlert {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  esimId      String
+  esim        ESim     @relation(fields: [esimId], references: [id], onDelete: Cascade)
+
+  threshold   Int      // Percentage (e.g., 50, 75, 90)
+  triggered   Boolean  @default(false)
+  triggeredAt DateTime?
+
+  // Notification preferences
+  emailNotify Boolean  @default(true)
+  smsNotify   Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+}
+
+// ============ TRAVEL GUIDES ============
+
+model TravelGuide {
+  id          String   @id @default(cuid())
+  countryCode String   @unique // ISO Alpha-2
+  countryName String
+
+  // Content
+  overview    String   @db.Text
+  tips        Json     // Array of tip objects
+  emergency   Json     // Emergency numbers, embassy info
+  connectivity Json    // Network coverage info, recommended carriers
+  attractions Json     // Popular places
+
+  // Media
+  heroImage   String?
+  flagImage   String?
+
+  published   Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ============ CACHED PACKAGES ============
+
+model CachedPackage {
+  id              String   @id @default(cuid())
+  packageCode     String   @unique
+  slug            String?  @unique
+  name            String
+
+  price           Int      // From API * 10000
+  retailPrice     Int?
+  currencyCode    String   @default("USD")
+
+  volume          BigInt   // bytes
+  duration        Int
+  durationUnit    String   @default("DAY")
+  unusedValidTime Int
+
+  location        String   // Country codes
+  description     String?
+
+  activeType      Int      @default(1)
+  dataType        Int      @default(1)
+  smsStatus       Int      @default(0)
+
+  speed           String?
+  ipExport        String?
+  supportTopUpType Int     @default(1)
+  fupPolicy       String?
+
+  favorite        Boolean  @default(false)
+
+  // Network info
+  networkInfo     Json?    // locationNetworkList from API
+
+  // Our markup
+  markupPercent   Int      @default(30) // 30% markup
+
+  lastSyncedAt    DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([location])
+}
+
+// ============ WEBHOOK LOGS ============
+
+model WebhookLog {
+  id          String   @id @default(cuid())
+  type        String   // ORDER_STATUS, DATA_USAGE, etc.
+  payload     Json
+  processed   Boolean  @default(false)
+  error       String?
+
+  createdAt   DateTime @default(now())
+}
+
+// ============ REFERRAL TRACKING ============
+
+model ReferralReward {
+  id            String   @id @default(cuid())
+  referrerId    String
+  referredId    String
+  orderId       String?
+
+  rewardAmount  Int      // cents credited to referrer
+  status        RewardStatus @default(PENDING)
+
+  createdAt     DateTime @default(now())
+  processedAt   DateTime?
+}
+
+enum RewardStatus {
+  PENDING
+  CREDITED
+  CANCELLED
+}
+
+// ============ PROMO CODES ============
+
+model PromoCode {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  discount    Int       // Percentage (10 = 10%)
+  maxUses     Int?
+  usedCount   Int       @default(0)
+  validFrom   DateTime  @default(now())
+  validUntil  DateTime?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+}
