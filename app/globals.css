@@ -37,8 +37,8 @@
   --glow-soft: 0 4px 60px rgba(0, 0, 0, 0.5);
 
   /* Typography */
-  --font-display: 'Clash Display', var(--font-geist-sans), system-ui;
-  --font-body: var(--font-geist-sans), system-ui;
+  --font-display: 'Google Sans', 'Google Sans Display', system-ui, sans-serif;
+  --font-body: 'Google Sans', system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), monospace;
 
   /* Spacing */

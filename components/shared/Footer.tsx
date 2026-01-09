@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { Globe, Mail, Twitter, Instagram, Linkedin } from 'lucide-react'
+import Image from 'next/image'
+import { Globe, Mail } from 'lucide-react'
 
 const footerLinks = {
   Product: [
@@ -30,12 +31,6 @@ const footerLinks = {
   ],
 }
 
-const socialLinks = [
-  { icon: Twitter, href: 'https://twitter.com/roamsim', label: 'Twitter' },
-  { icon: Instagram, href: 'https://instagram.com/roamsim', label: 'Instagram' },
-  { icon: Linkedin, href: 'https://linkedin.com/company/roamsim', label: 'LinkedIn' },
-]
-
 export function Footer() {
   return (
     <footer className="relative border-t border-white/5">
@@ -62,19 +57,29 @@ export function Footer() {
               Global eSIM data plans for travelers. Stay connected in 190+ countries with instant
               activation and no roaming fees.
             </p>
-            <div className="flex items-center gap-4">
-              {socialLinks.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400 hover:text-[#00f0ff] hover:bg-white/10 transition-all"
-                  aria-label={social.label}
-                >
-                  <social.icon className="w-5 h-5" />
-                </a>
-              ))}
+            {/* Payment Methods */}
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-slate-500">We accept:</span>
+              <div className="flex items-center gap-2">
+                <div className="bg-white rounded px-2 py-1">
+                  <Image
+                    src="/images/visa.png"
+                    alt="Visa"
+                    width={40}
+                    height={24}
+                    className="h-5 w-auto object-contain"
+                  />
+                </div>
+                <div className="bg-white rounded px-2 py-1">
+                  <Image
+                    src="/images/master-card.png"
+                    alt="Mastercard"
+                    width={40}
+                    height={24}
+                    className="h-5 w-auto object-contain"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
