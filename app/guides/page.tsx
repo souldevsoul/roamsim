@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Search, MapPin, Wifi, Phone, Shield, ChevronRight, Globe } from 'lucide-react'
+import { Navbar } from '@/components/shared/Navbar'
+import { Footer } from '@/components/shared/Footer'
 
 interface TravelGuide {
   id: string
@@ -98,9 +100,11 @@ export default function GuidesPage() {
   )
 
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-6 overflow-hidden">
+    <>
+      <Navbar />
+      <div className="min-h-screen">
+        {/* Hero Section */}
+        <section className="relative pt-32 pb-20 px-6 overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-[#00f0ff]/10 rounded-full blur-[150px]" />
           <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-[#a855f7]/10 rounded-full blur-[120px]" />
@@ -258,5 +262,7 @@ export default function GuidesPage() {
         </div>
       </section>
     </div>
+    <Footer />
+    </>
   )
 }

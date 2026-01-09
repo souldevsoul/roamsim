@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Globe,
   Zap,
@@ -13,6 +13,8 @@ import {
   Star,
   ChevronRight,
   Wifi,
+  Sparkles,
+  Signal,
 } from 'lucide-react'
 import { Navbar } from '@/components/shared/Navbar'
 import { Footer } from '@/components/shared/Footer'
@@ -121,6 +123,89 @@ function AnimatedCounter({ value }: { value: string }) {
   )
 }
 
+// Floating particles background
+function ParticleField() {
+  const particles = useMemo(() =>
+    Array.from({ length: 50 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: Math.random() * 3 + 1,
+      duration: Math.random() * 20 + 10,
+      delay: Math.random() * 5,
+    })), []
+  )
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map((particle) => (
+        <motion.div
+          key={particle.id}
+          className="absolute rounded-full bg-[#00f0ff]/30"
+          style={{
+            left: `${particle.x}%`,
+            top: `${particle.y}%`,
+            width: particle.size,
+            height: particle.size,
+          }}
+          animate={{
+            y: [0, -30, 0],
+            opacity: [0.2, 0.8, 0.2],
+          }}
+          transition={{
+            duration: particle.duration,
+            repeat: Infinity,
+            delay: particle.delay,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// Animated connection lines
+function ConnectionLines() {
+  return (
+    <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20" viewBox="0 0 100 100" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#00f0ff" stopOpacity="0" />
+          <stop offset="50%" stopColor="#00f0ff" stopOpacity="1" />
+          <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <motion.path
+        d="M0,50 Q25,30 50,50 T100,50"
+        fill="none"
+        stroke="url(#lineGrad)"
+        strokeWidth="0.1"
+        initial={{ pathLength: 0, opacity: 0 }}
+        animate={{ pathLength: 1, opacity: 1 }}
+        transition={{ duration: 2, repeat: Infinity, repeatType: "loop" }}
+      />
+      <motion.path
+        d="M0,30 Q35,50 50,30 T100,30"
+        fill="none"
+        stroke="url(#lineGrad)"
+        strokeWidth="0.1"
+        initial={{ pathLength: 0, opacity: 0 }}
+        animate={{ pathLength: 1, opacity: 1 }}
+        transition={{ duration: 2.5, delay: 0.5, repeat: Infinity, repeatType: "loop" }}
+      />
+      <motion.path
+        d="M0,70 Q40,50 60,70 T100,70"
+        fill="none"
+        stroke="url(#lineGrad)"
+        strokeWidth="0.1"
+        initial={{ pathLength: 0, opacity: 0 }}
+        animate={{ pathLength: 1, opacity: 1 }}
+        transition={{ duration: 3, delay: 1, repeat: Infinity, repeatType: "loop" }}
+      />
+    </svg>
+  )
+}
+
 export default function HomePage() {
   const [activeDestination, setActiveDestination] = useState(0)
 
@@ -137,12 +222,38 @@ export default function HomePage() {
 
       <main className="overflow-hidden">
         {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center pt-20">
-          {/* Animated Orbs */}
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#00f0ff]/20 rounded-full blur-[120px] animate-pulse" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#a855f7]/20 rounded-full blur-[120px] animate-pulse delay-1000" />
+        <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
+          {/* Particle Field Background */}
+          <ParticleField />
+          <ConnectionLines />
 
-          <div className="container mx-auto px-6 py-20">
+          {/* Animated Orbs - More dramatic */}
+          <motion.div
+            className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#00f0ff]/25 rounded-full blur-[150px]"
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.2, 0.35, 0.2],
+            }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-[#a855f7]/25 rounded-full blur-[120px]"
+            animate={{
+              scale: [1.2, 1, 1.2],
+              opacity: [0.15, 0.3, 0.15],
+            }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            className="absolute top-1/2 right-1/3 w-[300px] h-[300px] bg-[#ff00ff]/15 rounded-full blur-[100px]"
+            animate={{
+              x: [0, 50, 0],
+              y: [0, -30, 0],
+            }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          />
+
+          <div className="container mx-auto px-6 py-20 relative z-10">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               {/* Left Content */}
               <motion.div
@@ -150,21 +261,51 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
               >
-                {/* Badge */}
+                {/* Badge with sparkle effect */}
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8"
+                  initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full glass mb-8 border border-[#00f0ff]/30 relative overflow-hidden group"
                 >
-                  <span className="w-2 h-2 rounded-full bg-[#00f0ff] animate-pulse" />
-                  <span className="text-sm text-slate-300">Now available in 190+ countries</span>
+                  <motion.span
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-[#00f0ff]/10 to-transparent"
+                    animate={{ x: ['-100%', '100%'] }}
+                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                  />
+                  <Sparkles className="w-4 h-4 text-[#00f0ff]" />
+                  <span className="text-sm text-slate-200 font-medium">Now available in 190+ countries</span>
+                  <motion.span
+                    className="w-2 h-2 rounded-full bg-[#00f0ff]"
+                    animate={{ scale: [1, 1.3, 1], opacity: [1, 0.5, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
                 </motion.div>
 
                 <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-6">
-                  Global Data.
-                  <br />
-                  <span className="text-gradient">Zero Hassle.</span>
+                  <motion.span
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="block"
+                  >
+                    Global Data.
+                  </motion.span>
+                  <motion.span
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="block text-gradient relative"
+                  >
+                    Zero Hassle.
+                    <motion.span
+                      className="absolute -right-8 -top-2"
+                      animate={{ rotate: [0, 15, -15, 0] }}
+                      transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                    >
+                      <Signal className="w-6 h-6 text-[#00f0ff]" />
+                    </motion.span>
+                  </motion.span>
                 </h1>
 
                 <p className="text-lg text-slate-400 max-w-xl mb-8 leading-relaxed">
@@ -172,31 +313,59 @@ export default function HomePage() {
                   one tap. No physical SIM needed.
                 </p>
 
-                <div className="flex flex-col sm:flex-row gap-4 mb-12">
-                  <Link href="/destinations" className="btn-primary text-lg py-4 px-8">
-                    Browse Plans
-                    <ArrowRight className="w-5 h-5" />
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7 }}
+                  className="flex flex-col sm:flex-row gap-4 mb-12"
+                >
+                  <Link href="/destinations" className="btn-primary text-lg py-4 px-8 group relative overflow-hidden">
+                    <span className="relative z-10 flex items-center gap-2">
+                      Browse Plans
+                      <motion.span
+                        className="inline-block"
+                        animate={{ x: [0, 4, 0] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                      >
+                        <ArrowRight className="w-5 h-5" />
+                      </motion.span>
+                    </span>
                   </Link>
-                  <Link href="/how-it-works" className="btn-secondary text-lg py-4 px-8">
-                    How It Works
+                  <Link href="/how-it-works" className="btn-secondary text-lg py-4 px-8 group">
+                    <span className="group-hover:text-[#00f0ff] transition-colors">How It Works</span>
                   </Link>
-                </div>
+                </motion.div>
 
-                {/* Trust Badges */}
-                <div className="flex items-center gap-6 text-sm text-slate-400">
-                  <div className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-[#00f0ff]" />
-                    <span>No contracts</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-[#00f0ff]" />
-                    <span>Instant delivery</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-[#00f0ff]" />
-                    <span>Money-back guarantee</span>
-                  </div>
-                </div>
+                {/* Trust Badges - Enhanced */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.9 }}
+                  className="flex flex-wrap items-center gap-4 md:gap-6 text-sm"
+                >
+                  {[
+                    { text: 'No contracts', delay: 0 },
+                    { text: 'Instant delivery', delay: 0.1 },
+                    { text: 'Money-back guarantee', delay: 0.2 },
+                  ].map((item, i) => (
+                    <motion.div
+                      key={item.text}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 1 + item.delay }}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10"
+                    >
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 1.2 + item.delay, type: "spring", stiffness: 400 }}
+                      >
+                        <Check className="w-4 h-4 text-[#00f0ff]" />
+                      </motion.div>
+                      <span className="text-slate-300">{item.text}</span>
+                    </motion.div>
+                  ))}
+                </motion.div>
               </motion.div>
 
               {/* Right - Phone Mockup */}
@@ -306,21 +475,32 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Stats Section */}
-        <section className="py-16 border-y border-white/5">
-          <div className="container mx-auto px-6">
+        {/* Stats Section - Enhanced with glow effects */}
+        <section className="py-20 border-y border-white/5 relative overflow-hidden">
+          {/* Subtle animated background */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#00f0ff]/5 via-transparent to-[#a855f7]/5" />
+
+          <div className="container mx-auto px-6 relative">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {stats.map((stat, i) => (
                 <motion.div
                   key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
                   viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  className="text-center"
+                  transition={{ delay: i * 0.1, type: "spring", stiffness: 100 }}
+                  className="text-center group"
                 >
-                  <AnimatedCounter value={stat.value} />
-                  <p className="text-slate-400 mt-2">{stat.label}</p>
+                  <motion.div
+                    className="relative inline-block"
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <AnimatedCounter value={stat.value} />
+                    <motion.div
+                      className="absolute -inset-4 rounded-full bg-[#00f0ff]/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                    />
+                  </motion.div>
+                  <p className="text-slate-400 mt-3 text-sm md:text-base font-medium">{stat.label}</p>
                 </motion.div>
               ))}
             </div>
@@ -328,18 +508,30 @@ export default function HomePage() {
         </section>
 
         {/* Popular Destinations */}
-        <section className="section">
-          <div className="container mx-auto px-6">
+        <section className="section relative">
+          {/* Section background accent */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-[#00f0ff]/5 rounded-full blur-[150px] pointer-events-none" />
+
+          <div className="container mx-auto px-6 relative">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               className="text-center mb-16"
             >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-6"
+              >
+                <Globe className="w-4 h-4 text-[#a855f7]" />
+                <span className="text-sm text-slate-300">Worldwide Coverage</span>
+              </motion.div>
               <h2 className="text-4xl md:text-5xl font-bold mb-4">
                 Popular <span className="text-gradient">Destinations</span>
               </h2>
-              <p className="text-slate-400 max-w-2xl mx-auto">
+              <p className="text-slate-400 max-w-2xl mx-auto text-lg">
                 Get instant data in the world&apos;s most visited countries. Plans starting from
                 just $2.99.
               </p>
@@ -353,23 +545,41 @@ export default function HomePage() {
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.05 }}
+                  whileHover={{ y: -6 }}
                 >
                   <Link
                     href={`/destinations/${dest.code.toLowerCase()}`}
-                    className="block glass glass-hover p-6 group"
+                    className="block glass p-6 group relative overflow-hidden transition-all duration-300 hover:border-[#00f0ff]/30 hover:shadow-[0_0_30px_rgba(0,240,255,0.1)]"
                   >
-                    <div className="flex items-center gap-4 mb-4">
-                      <span className="text-4xl">{dest.flag}</span>
+                    {/* Hover gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#00f0ff]/0 to-[#a855f7]/0 group-hover:from-[#00f0ff]/5 group-hover:to-[#a855f7]/5 transition-all duration-300" />
+
+                    <div className="relative flex items-center gap-4 mb-4">
+                      <motion.span
+                        className="text-4xl"
+                        whileHover={{ scale: 1.2, rotate: 5 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                      >
+                        {dest.flag}
+                      </motion.span>
                       <div>
                         <h3 className="font-semibold group-hover:text-[#00f0ff] transition-colors">
                           {dest.name}
                         </h3>
-                        <p className="text-sm text-slate-400">From ${dest.from}</p>
+                        <p className="text-sm text-slate-400">
+                          From <span className="text-[#00f0ff] font-medium">${dest.from}</span>
+                        </p>
                       </div>
                     </div>
-                    <div className="flex items-center text-sm text-[#00f0ff] opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="relative flex items-center text-sm text-[#00f0ff] opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
                       <span>View plans</span>
-                      <ArrowRight className="w-4 h-4 ml-1" />
+                      <motion.span
+                        className="ml-1"
+                        animate={{ x: [0, 4, 0] }}
+                        transition={{ duration: 1, repeat: Infinity }}
+                      >
+                        <ArrowRight className="w-4 h-4" />
+                      </motion.span>
                     </div>
                   </Link>
                 </motion.div>
@@ -540,40 +750,96 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* CTA Section */}
+        {/* CTA Section - Premium Enhancement */}
         <section className="section">
           <div className="container mx-auto px-6">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              className="relative overflow-hidden rounded-3xl"
+              className="relative overflow-hidden rounded-3xl border border-white/10"
             >
               {/* Background Gradient */}
               <div className="absolute inset-0 bg-gradient-to-br from-[#00f0ff]/20 via-[#a855f7]/20 to-[#ff00ff]/20" />
               <div className="absolute inset-0 bg-[#0f1629]/80 backdrop-blur-xl" />
 
               {/* Animated Orbs */}
-              <div className="absolute top-0 left-0 w-64 h-64 bg-[#00f0ff]/30 rounded-full blur-[80px]" />
-              <div className="absolute bottom-0 right-0 w-64 h-64 bg-[#a855f7]/30 rounded-full blur-[80px]" />
+              <motion.div
+                className="absolute top-0 left-0 w-80 h-80 bg-[#00f0ff]/30 rounded-full blur-[100px]"
+                animate={{
+                  scale: [1, 1.2, 1],
+                  x: [0, 20, 0],
+                }}
+                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <motion.div
+                className="absolute bottom-0 right-0 w-80 h-80 bg-[#a855f7]/30 rounded-full blur-[100px]"
+                animate={{
+                  scale: [1.2, 1, 1.2],
+                  x: [0, -20, 0],
+                }}
+                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+              />
 
-              <div className="relative px-8 py-16 md:px-16 md:py-24 text-center">
-                <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              {/* Grid pattern overlay */}
+              <div className="absolute inset-0 opacity-10" style={{
+                backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
+                backgroundSize: '24px 24px'
+              }} />
+
+              <div className="relative px-8 py-20 md:px-16 md:py-28 text-center">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 mb-8"
+                >
+                  <Sparkles className="w-4 h-4 text-[#00f0ff]" />
+                  <span className="text-sm font-medium">Limited Time: 20% off your first plan</span>
+                </motion.div>
+
+                <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
                   Ready to <span className="text-gradient">Travel Connected?</span>
                 </h2>
-                <p className="text-lg text-slate-400 max-w-2xl mx-auto mb-10">
+                <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10">
                   Join 2 million+ travelers who stay connected with RoamSIM. Get your first eSIM
                   today and experience seamless global connectivity.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link href="/destinations" className="btn-primary text-lg py-4 px-10">
-                    Get Started
-                    <ArrowRight className="w-5 h-5" />
-                  </Link>
-                  <Link href="/contact" className="btn-secondary text-lg py-4 px-10">
-                    Contact Sales
-                  </Link>
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Link href="/destinations" className="btn-primary text-lg py-4 px-10 shadow-[0_0_30px_rgba(0,240,255,0.3)]">
+                      Get Started
+                      <ArrowRight className="w-5 h-5" />
+                    </Link>
+                  </motion.div>
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Link href="/contact" className="btn-secondary text-lg py-4 px-10">
+                      Contact Sales
+                    </Link>
+                  </motion.div>
                 </div>
+
+                {/* Trust indicators */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.3 }}
+                  className="mt-12 flex flex-wrap justify-center gap-6 text-sm text-slate-500"
+                >
+                  <span className="flex items-center gap-2">
+                    <Shield className="w-4 h-4" />
+                    Secure payments
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <Zap className="w-4 h-4" />
+                    Instant activation
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    24/7 support
+                  </span>
+                </motion.div>
               </div>
             </motion.div>
           </div>
