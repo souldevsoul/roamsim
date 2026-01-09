@@ -251,6 +251,18 @@ h3 {
   transition: all 0.3s ease;
 }
 
+/* Input with left icon - increased left padding to prevent overlap */
+.input.pl-10,
+.input[class*="pl-"] {
+  padding-left: 44px;
+}
+
+/* Input with right icon - increased right padding */
+.input.pr-10,
+.input[class*="pr-"] {
+  padding-right: 44px;
+}
+
 .input::placeholder {
   color: var(--foreground-subtle);
 }
