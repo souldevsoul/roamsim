@@ -4,11 +4,29 @@ import Stripe from 'stripe'
 import { prisma } from '@/lib/db'
 import { getESIMAccessAPI } from '@/lib/esim-access'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-12-15.clover',
-})
+// Lazy-load Stripe to avoid build-time errors when env vars aren't available
+let stripeInstance: Stripe | null = null
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
+function getStripe(): Stripe {
+  if (!stripeInstance) {
+    const secretKey = process.env.STRIPE_SECRET_KEY
+    if (!secretKey) {
+      throw new Error('STRIPE_SECRET_KEY not configured')
+    }
+    stripeInstance = new Stripe(secretKey, {
+      apiVersion: '2025-12-15.clover',
+    })
+  }
+  return stripeInstance
+}
+
+function getWebhookSecret(): string {
+  const secret = process.env.STRIPE_WEBHOOK_SECRET
+  if (!secret) {
+    throw new Error('STRIPE_WEBHOOK_SECRET not configured')
+  }
+  return secret
+}
 
 export async function POST(request: Request) {
   try {
@@ -23,7 +41,7 @@ export async function POST(request: Request) {
     let event: Stripe.Event
 
     try {
-      event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
+      event = getStripe().webhooks.constructEvent(body, sig, getWebhookSecret())
     } catch (err) {
       console.error('Webhook signature verification failed:', err)
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })

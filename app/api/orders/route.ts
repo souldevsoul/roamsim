@@ -5,9 +5,21 @@ import { getESIMAccessAPI } from '@/lib/esim-access'
 import { generateTransactionId, apiPriceToCents, applyMarkup } from '@/lib/utils'
 import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-12-15.clover',
-})
+// Lazy-load Stripe to avoid build-time errors when env vars aren't available
+let stripe: Stripe | null = null
+
+function getStripe(): Stripe {
+  if (!stripe) {
+    const secretKey = process.env.STRIPE_SECRET_KEY
+    if (!secretKey) {
+      throw new Error('STRIPE_SECRET_KEY not configured')
+    }
+    stripe = new Stripe(secretKey, {
+      apiVersion: '2025-12-15.clover',
+    })
+  }
+  return stripe
+}
 
 export async function POST(request: Request) {
   try {
@@ -129,7 +141,7 @@ export async function POST(request: Request) {
     }
 
     // Create Stripe checkout session
-    const stripeSession = await stripe.checkout.sessions.create({
+    const stripeSession = await getStripe().checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
       customer_email: session.user.email!,
@@ -342,13 +354,14 @@ async function processOrder(
 // Helper to create/get credits coupon
 async function getOrCreateCreditsCoupon(amount: number): Promise<string> {
   const couponId = `credits_${amount}`
+  const stripeClient = getStripe()
 
   try {
-    await stripe.coupons.retrieve(couponId)
+    await stripeClient.coupons.retrieve(couponId)
     return couponId
   } catch {
     // Create the coupon if it doesn't exist
-    const coupon = await stripe.coupons.create({
+    const coupon = await stripeClient.coupons.create({
       id: couponId,
       amount_off: amount,
       currency: 'usd',
